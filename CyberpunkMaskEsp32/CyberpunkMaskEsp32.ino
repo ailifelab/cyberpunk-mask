@@ -5,9 +5,26 @@
 #include "images.h"
 #include "OLEDDisplayUi.h"
 #include "esp32_digital_led_lib.h" //流水灯控制
-
+#include <TimeLib.h>
 //for led band
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
+#define LED_BAND_PIN 27
+#define DISP_SDA_1 0
+#define DISP_SCL_1 14
+#define DISP_SDA_2 5
+#define DISP_SCL_2 4
+
+#define BTN_UP 6
+#define BTN_DOWN 7
+#define BTN_ENTER 8
+#define BTN_BACK 9
+
+int screenW = 128;
+int screenH = 64;
+int clockCenterX = screenW / 2;
+int clockCenterY = ((screenH - 16) / 2) + 16; // top yellow part is 16 px height
+int clockRadius = 23;
 
 void espPinMode(int pinNum, int pinDir) {
   // Enable GPIO32 or 33 as output. Doesn't seem to work though.
@@ -42,7 +59,7 @@ void gpioSetup(int gpioNum, int gpioMode, int gpioVal) {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
 
 //strand_t strand = {.rmtChannel = 0, .gpioNum = 26, .ledType = LED_WS2812B_V3, .brightLimit = 32, .numPixels = 64};
-strand_t strand = {.rmtChannel = 0, .gpioNum = 27, .ledType = LED_SK6812W_V1, .brightLimit = 64, .numPixels = 144};
+strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_SK6812W_V1, .brightLimit = 64, .numPixels = 144};
 strand_t * STRANDS [] = { &strand };
 int STRANDCNT = COUNT_OF(STRANDS);
 #pragma GCC diagnostic pop
@@ -70,8 +87,8 @@ void randomStrands(strand_t * strands[], int numStrands, unsigned long delay_ms,
 }
 
 // Initialize the OLED display using Wire library
-SSD1306Wire  display(0x3c, 0, 14);
-SSD1306Wire  display2(0x3c, 5, 4);
+SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1 );
+SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2);
 //display 用于菜单选择控制
 OLEDDisplayUi ui     ( &display );
 
@@ -102,7 +119,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawString(0 + x, 20 + y, "Arial 16");
 
   display->setFont(ArialMT_Plain_24);
-  display->drawString(0 + x, 34 + y, "Arial 24");
+  display->drawString(0 + x, 34 + y, "Test 24");
 }
 
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -131,13 +148,95 @@ void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
 }
 
-void drawFrame5(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+/**
+   时钟
+*/
+void analogClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  //  ui.disableIndicator();
+
+  // Draw the clock face
+  //  display->drawCircle(clockCenterX + x, clockCenterY + y, clockRadius);
+  display->drawCircle(clockCenterX + x, clockCenterY + y, 2);
+  //
+  //hour ticks
+  for ( int z = 0; z < 360; z = z + 30 ) {
+    //Begin at 0° and stop at 360°
+    float angle = z ;
+    angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
+    int x2 = ( clockCenterX + ( sin(angle) * clockRadius ) );
+    int y2 = ( clockCenterY - ( cos(angle) * clockRadius ) );
+    int x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 8 ) ) ) );
+    int y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 8 ) ) ) );
+    display->drawLine( x2 + x , y2 + y , x3 + x , y3 + y);
+  }
+
+  // display second hand
+  float angle = second() * 6 ;
+  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
+  int x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 5 ) ) ) );
+  int y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 5 ) ) ) );
+  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
+  //
+  // display minute hand
+  angle = minute() * 6 ;
+  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
+  x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 4 ) ) ) );
+  y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 4 ) ) ) );
+  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
+  //
+  // display hour hand
+  angle = hour() * 30 + int( ( minute() / 12 ) * 6 )   ;
+  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
+  x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 2 ) ) ) );
+  y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 2 ) ) ) );
+  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
+}
+
+void digitalClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  String timenow = String(hour()) + ":" + twoDigits(minute()) + ":" + twoDigits(second());
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->setFont(ArialMT_Plain_24);
+  display->drawString(clockCenterX + x , clockCenterY + y, timenow );
+}
+/**
+   菜单首页
+*/
+void drawMainPage(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  digitalClockFrame(display, state, x, y);
+}
+/**
+   流水灯模式选择
+*/
+void drawFlowLed(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
 
 }
+/**
+   副屏显示选择
+*/
+void drawOled(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+
+}
+/**
+   蓝牙菜单
+*/
+void drawBle(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(0 + x, 20 + y, "Bluetooth");
+  display->drawXbm(x + 80, y + 10, BLE_Logo_width, BLE_Logo_height, BLE_Logo_bits);
+}
+/**
+   wifi配置
+*/
+void drawWifi(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->drawXbm(x + 34, y + 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
+}
+
+/*******菜单 完成*******/
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4, drawFrame5 };
+FrameCallback frames[] = { drawMainPage, drawFlowLed, drawOled, drawBle, drawWifi };
 
 // how many frames are there?
 int frameCount = 5;
@@ -318,7 +417,7 @@ void rainbows(strand_t * strands[], int numStrands, unsigned long delay_ms, unsi
 }
 
 
-//**************************************************************************//
+//***************************************************//
 void simpleStepper(strand_t * strands [], int numStrands, unsigned long delay_ms, unsigned long timeout_ms)
 {
   int highLimit = 32;
