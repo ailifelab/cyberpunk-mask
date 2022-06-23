@@ -67,7 +67,6 @@ int STRANDCNT = COUNT_OF(STRANDS);
 int stepper = 0;
 int colord = 0;
 
-//**************************************************************************//
 void randomStrands(strand_t * strands[], int numStrands, unsigned long delay_ms, unsigned long timeout_ms)
 {
   Serial.print("DEMO: random colors, delay = ");
@@ -87,10 +86,10 @@ void randomStrands(strand_t * strands[], int numStrands, unsigned long delay_ms,
 }
 
 // Initialize the OLED display using Wire library
-SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1 );
-SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2);
+SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
+SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2, GEOMETRY_128_64, I2C_TWO);
 //display 用于菜单选择控制
-OLEDDisplayUi ui     ( &display );
+OLEDDisplayUi ui ( &display );
 
 /****绘制菜单****/
 
@@ -108,37 +107,6 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawXbm(x + 34, y + 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
 }
 
-void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demonstrates the 3 included default sizes. The fonts come from SSD1306Fonts.h file
-  // Besides the default fonts there will be a program to convert TrueType fonts into this format
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 10 + y, "Arial 10");
-
-  display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 20 + y, "Arial 16");
-
-  display->setFont(ArialMT_Plain_24);
-  display->drawString(0 + x, 34 + y, "Test 24");
-}
-
-void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Text alignment demo
-  display->setFont(ArialMT_Plain_10);
-
-  // The coordinates define the left starting point of the text
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 11 + y, "Left aligned (0,10)");
-
-  // The coordinates define the center of the text
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 22 + y, "Center aligned (64,22)");
-
-  // The coordinates define the right end of the text
-  display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(128 + x, 33 + y, "Right aligned (128,33)");
-}
-
 void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   // Demo for drawStringMaxWidth:
   // with the third parameter you can define the width after which words will be wrapped.
@@ -151,6 +119,17 @@ void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 /**
    时钟
 */
+// utility function for digital clock display: prints leading 0
+String twoDigits(int digits) {
+  if (digits < 10) {
+    String i = '0' + String(digits);
+    return i;
+  }
+  else {
+    return String(digits);
+  }
+}
+
 void analogClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   //  ui.disableIndicator();
 
@@ -202,19 +181,40 @@ void digitalClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t 
    菜单首页
 */
 void drawMainPage(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  digitalClockFrame(display, state, x, y);
+  analogClockFrame(display, state, x, y);
 }
 /**
    流水灯模式选择
 */
 void drawFlowLed(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(0 + x, 10 + y, "Arial 10");
 
+  display->setFont(ArialMT_Plain_16);
+  display->drawString(0 + x, 20 + y, "Arial 16");
+
+  display->setFont(ArialMT_Plain_24);
+  display->drawString(0 + x, 34 + y, "Test 24");
 }
 /**
    副屏显示选择
 */
 void drawOled(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  // Text alignment demo
+  display->setFont(ArialMT_Plain_10);
 
+  // The coordinates define the left starting point of the text
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0 + x, 11 + y, "Left aligned (0,10)");
+
+  // The coordinates define the center of the text
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64 + x, 22 + y, "Center aligned (64,22)");
+
+  // The coordinates define the right end of the text
+  display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  display->drawString(128 + x, 33 + y, "Right aligned (128,33)");
 }
 /**
    蓝牙菜单
@@ -245,69 +245,6 @@ int frameCount = 5;
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 /***绘制菜单 end****/
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Initializing...");
-  digitalLeds_initDriver();
-
-  // Init unused outputs low to reduce noise
-  //  gpioSetup(14, OUTPUT, LOW);
-  gpioSetup(15, OUTPUT, LOW);
-  gpioSetup(26, OUTPUT, LOW);
-  gpioSetup(27, OUTPUT, LOW);
-  gpioSetup(strand.gpioNum, OUTPUT, LOW);
-  int rc = digitalLeds_addStrands(STRANDS, STRANDCNT);
-  if (rc) {
-    Serial.print("Init rc = ");
-    Serial.println(rc);
-  }
-  if (digitalLeds_initDriver()) {
-    Serial.println("Init FAILURE: halting");
-    while (true) {};
-  }
-  digitalLeds_resetPixels(STRANDS, STRANDCNT);
-
-  // Initialising the UI will init the display too.
-  // The ESP is capable of rendering 60fps in 80Mhz mode
-  // but that won't give you much time for anything else
-  // run it in 160Mhz mode or just set it to 30 fps
-  ui.setTargetFPS(60);
-
-  // Customize the active and inactive symbol
-  ui.setActiveSymbol(activeSymbol);
-  ui.setInactiveSymbol(inactiveSymbol);
-
-  // You can change this to
-  // TOP, LEFT, BOTTOM, RIGHT
-  ui.setIndicatorPosition(BOTTOM);
-
-  // Defines where the first frame is located in the bar.
-  ui.setIndicatorDirection(LEFT_RIGHT);
-
-  // You can change the transition that is used
-  // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
-  ui.setFrameAnimation(SLIDE_LEFT);
-
-  // Add frames
-  ui.setFrames(frames, frameCount);
-
-  // Add overlays
-  ui.setOverlays(overlays, overlaysCount);
-
-  // Initialising the UI will init the display too.
-  ui.init();
-  display.flipScreenVertically();
-
-  display2.init();
-  // This will make sure that multiple instances of a display driver
-  // running on different ports will work together transparently
-  display2.setI2cAutoInit(true);
-  display2.flipScreenVertically();
-  display2.setFont(ArialMT_Plain_10);
-  display2.setTextAlignment(TEXT_ALIGN_LEFT);
-
-}
 
 //**************************************************************************//
 class Rainbower {
@@ -416,8 +353,6 @@ void rainbows(strand_t * strands[], int numStrands, unsigned long delay_ms, unsi
   digitalLeds_resetPixels(strands, numStrands);
 }
 
-
-//***************************************************//
 void simpleStepper(strand_t * strands [], int numStrands, unsigned long delay_ms, unsigned long timeout_ms)
 {
   int highLimit = 32;
@@ -441,6 +376,81 @@ void simpleStepper(strand_t * strands [], int numStrands, unsigned long delay_ms
   digitalLeds_resetPixels(strands, numStrands);
 }
 
+/**
+   初始化
+*/
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Initializing...");
+  digitalLeds_initDriver();
+
+  // Init unused outputs low to reduce noise
+  //  gpioSetup(14, OUTPUT, LOW);
+  //  gpioSetup(15, OUTPUT, LOW);
+  //  gpioSetup(26, OUTPUT, LOW);
+  //  gpioSetup(27, OUTPUT, LOW);
+  gpioSetup(strand.gpioNum, OUTPUT, LOW);
+  int rc = digitalLeds_addStrands(STRANDS, STRANDCNT);
+  if (rc) {
+    Serial.print("Init rc = ");
+    Serial.println(rc);
+  }
+  if (digitalLeds_initDriver()) {
+    Serial.println("Init FAILURE: halting");
+    while (true) {};
+  }
+  digitalLeds_resetPixels(STRANDS, STRANDCNT);
+
+  // Initialising the UI will init the display too.
+  // The ESP is capable of rendering 60fps in 80Mhz mode
+  // but that won't give you much time for anything else
+  // run it in 160Mhz mode or just set it to 30 fps
+  ui.setTargetFPS(60);
+
+  // Customize the active and inactive symbol
+  ui.setActiveSymbol(activeSymbol);
+  ui.setInactiveSymbol(inactiveSymbol);
+
+  // You can change this to
+  // TOP, LEFT, BOTTOM, RIGHT
+  ui.setIndicatorPosition(BOTTOM);
+
+  // Defines where the first frame is located in the bar.
+  ui.setIndicatorDirection(LEFT_RIGHT);
+
+  // You can change the transition that is used
+  // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
+  ui.setFrameAnimation(SLIDE_LEFT);
+
+  // Add frames
+  ui.setFrames(frames, frameCount);
+
+  // Add overlays
+  ui.setOverlays(overlays, overlaysCount);
+
+  // Initialising the UI will init the display too.
+  ui.init();
+
+  display2.init();
+  // This will make sure that multiple instances of a display driver
+  // running on different ports will work together transparently
+  display2.setI2cAutoInit(true);
+  display2.flipScreenVertically();
+  display2.setFont(ArialMT_Plain_10);
+  display2.setTextAlignment(TEXT_ALIGN_LEFT);
+  display2.clear();
+  display2.drawString(0, 0, "Hello world: " + String(millis()));
+  display2.display();
+
+  unsigned long secsSinceStart = millis();
+  // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+  const unsigned long seventyYears = 2208988800UL;
+  // subtract seventy years:
+  unsigned long epoch = secsSinceStart - seventyYears * SECS_PER_HOUR;
+  setTime(epoch);
+
+}
+
 void loop() {
   int remainingTimeBudget = ui.update();
 
@@ -451,12 +461,10 @@ void loop() {
     delay(remainingTimeBudget);
   }
 
-  display2.clear();
-  display2.drawString(0, 0, "Hello world: " + String(millis()));
-  display2.display();
 
-  //  randomStrands(STRANDS, STRANDCNT, 200, 10000);
+
+  // randomStrands(STRANDS, STRANDCNT, 200, 10000);
   rainbows(STRANDS, STRANDCNT, 1, 0);
-  //simpleStepper(STRANDS, STRANDCNT, 0, 0);
+  // simpleStepper(STRANDS, STRANDCNT, 0, 0);
   delay(10);
 }
