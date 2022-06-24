@@ -1,30 +1,50 @@
-// Include the correct display library
-// For a connection via I2C using Wire include
+/**
+   Cyberpunk Mask Diplay Controller
+   使用ESP-WROOM-32主板
+   External libraries:
+     1.ESP32 Digital RGB LED Drivers | https://github.com/MartyMacGyver/ESP32-Digital-RGB-LED-Drivers | WS2812跑马灯带
+     2.ESP8266 and ESP32 OLED driver for SSD1306 displays| https://github.com/ThingPulse/esp8266-oled-ssd1306 | SSD1306 OLED I2C屏幕
+     3.Time | 时间库
+*/
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
-#include "images.h"
+#include <TimeLib.h>
+#include "SSD1306Wire.h"
 #include "OLEDDisplayUi.h"
 #include "esp32_digital_led_lib.h" //流水灯控制
-#include <TimeLib.h>
-//for led band
-#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
-
+#include "ControlUi.h"
+//定义输出
 #define LED_BAND_PIN 27
 #define DISP_SDA_1 0
 #define DISP_SCL_1 14
 #define DISP_SDA_2 5
 #define DISP_SCL_2 4
-
+//定义按钮
 #define BTN_UP 6
 #define BTN_DOWN 7
 #define BTN_ENTER 8
 #define BTN_BACK 9
+int preBtnStatUp = HIGH;
+int preBtnStatDown = HIGH;
+int preBtnStatEnter = HIGH;
+int preBtnStatBack = HIGH;
 
-int screenW = 128;
-int screenH = 64;
-int clockCenterX = screenW / 2;
-int clockCenterY = ((screenH - 16) / 2) + 16; // top yellow part is 16 px height
-int clockRadius = 23;
+// Initialize the OLED display using Wire library
+SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
+SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2, GEOMETRY_128_64, I2C_TWO);
+//display 用于菜单选择控制
+OLEDDisplayUi ui ( &display );
+ControlUi controlUi ( &ui );
+
+//for LED band
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
+strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 32, .numPixels = 64};
+strand_t * STRANDS [] = { &strand };
+int STRANDCNT = COUNT_OF(STRANDS);
+#pragma GCC diagnostic pop
+int stepper = 0;
+int colord = 0;
 
 void espPinMode(int pinNum, int pinDir) {
   // Enable GPIO32 or 33 as output. Doesn't seem to work though.
@@ -55,18 +75,6 @@ void gpioSetup(int gpioNum, int gpioMode, int gpioVal) {
 #endif
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
-
-//strand_t strand = {.rmtChannel = 0, .gpioNum = 26, .ledType = LED_WS2812B_V3, .brightLimit = 32, .numPixels = 64};
-strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_SK6812W_V1, .brightLimit = 64, .numPixels = 144};
-strand_t * STRANDS [] = { &strand };
-int STRANDCNT = COUNT_OF(STRANDS);
-#pragma GCC diagnostic pop
-
-int stepper = 0;
-int colord = 0;
-
 void randomStrands(strand_t * strands[], int numStrands, unsigned long delay_ms, unsigned long timeout_ms)
 {
   Serial.print("DEMO: random colors, delay = ");
@@ -85,168 +93,25 @@ void randomStrands(strand_t * strands[], int numStrands, unsigned long delay_ms,
   }
 }
 
-// Initialize the OLED display using Wire library
-SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
-SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2, GEOMETRY_128_64, I2C_TWO);
-//display 用于菜单选择控制
-OLEDDisplayUi ui ( &display );
 
 /****绘制菜单****/
-
+/**
+   an over layer
+*/
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, String(millis()));
 }
 
-void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // draw an xbm image.
-  // Please note that everything that should be transitioned
-  // needs to be drawn relative to x and y
 
-  display->drawXbm(x + 34, y + 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
-}
-
-void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demo for drawStringMaxWidth:
-  // with the third parameter you can define the width after which words will be wrapped.
-  // Currently only spaces and "-" are allowed for wrapping
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
-}
-
-/**
-   时钟
-*/
-// utility function for digital clock display: prints leading 0
-String twoDigits(int digits) {
-  if (digits < 10) {
-    String i = '0' + String(digits);
-    return i;
-  }
-  else {
-    return String(digits);
-  }
-}
-
-void analogClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  //  ui.disableIndicator();
-
-  // Draw the clock face
-  //  display->drawCircle(clockCenterX + x, clockCenterY + y, clockRadius);
-  display->drawCircle(clockCenterX + x, clockCenterY + y, 2);
-  //
-  //hour ticks
-  for ( int z = 0; z < 360; z = z + 30 ) {
-    //Begin at 0° and stop at 360°
-    float angle = z ;
-    angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
-    int x2 = ( clockCenterX + ( sin(angle) * clockRadius ) );
-    int y2 = ( clockCenterY - ( cos(angle) * clockRadius ) );
-    int x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 8 ) ) ) );
-    int y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 8 ) ) ) );
-    display->drawLine( x2 + x , y2 + y , x3 + x , y3 + y);
-  }
-
-  // display second hand
-  float angle = second() * 6 ;
-  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
-  int x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 5 ) ) ) );
-  int y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 5 ) ) ) );
-  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
-  //
-  // display minute hand
-  angle = minute() * 6 ;
-  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
-  x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 4 ) ) ) );
-  y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 4 ) ) ) );
-  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
-  //
-  // display hour hand
-  angle = hour() * 30 + int( ( minute() / 12 ) * 6 )   ;
-  angle = ( angle / 57.29577951 ) ; //Convert degrees to radians
-  x3 = ( clockCenterX + ( sin(angle) * ( clockRadius - ( clockRadius / 2 ) ) ) );
-  y3 = ( clockCenterY - ( cos(angle) * ( clockRadius - ( clockRadius / 2 ) ) ) );
-  display->drawLine( clockCenterX + x , clockCenterY + y , x3 + x , y3 + y);
-}
-
-void digitalClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  String timenow = String(hour()) + ":" + twoDigits(minute()) + ":" + twoDigits(second());
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->setFont(ArialMT_Plain_24);
-  display->drawString(clockCenterX + x , clockCenterY + y, timenow );
-}
-/**
-   菜单首页
-*/
-void drawMainPage(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  analogClockFrame(display, state, x, y);
-}
-/**
-   流水灯模式选择
-*/
-void drawFlowLed(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 10 + y, "Arial 10");
-
-  display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 20 + y, "Arial 16");
-
-  display->setFont(ArialMT_Plain_24);
-  display->drawString(0 + x, 34 + y, "Test 24");
-}
-/**
-   副屏显示选择
-*/
-void drawOled(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Text alignment demo
-  display->setFont(ArialMT_Plain_10);
-
-  // The coordinates define the left starting point of the text
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 11 + y, "Left aligned (0,10)");
-
-  // The coordinates define the center of the text
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 22 + y, "Center aligned (64,22)");
-
-  // The coordinates define the right end of the text
-  display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(128 + x, 33 + y, "Right aligned (128,33)");
-}
-/**
-   蓝牙菜单
-*/
-void drawBle(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 20 + y, "Bluetooth");
-  display->drawXbm(x + 80, y + 10, BLE_Logo_width, BLE_Logo_height, BLE_Logo_bits);
-}
-/**
-   wifi配置
-*/
-void drawWifi(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->drawXbm(x + 34, y + 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
-}
-
-/*******菜单 完成*******/
-
-// This array keeps function pointers to all frames
-// frames are the single views that slide in
-FrameCallback frames[] = { drawMainPage, drawFlowLed, drawOled, drawBle, drawWifi };
-
-// how many frames are there?
-int frameCount = 5;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 /***绘制菜单 end****/
 
-//**************************************************************************//
+//****************LED灯带********************//
 class Rainbower {
   private:
     strand_t * pStrand;
@@ -337,8 +202,7 @@ void rainbows(strand_t * strands[], int numStrands, unsigned long delay_ms, unsi
     Serial.print((uint32_t)pRbow[i], HEX);
     Serial.print(")");
   }
-  Serial.print(")");
-  Serial.println();
+  Serial.println(")");
   unsigned long start_ms = millis();
   while (timeout_ms == 0 || (millis() - start_ms < timeout_ms)) {
     for (i = 0; i < numStrands; i++) {
@@ -375,72 +239,97 @@ void simpleStepper(strand_t * strands [], int numStrands, unsigned long delay_ms
   }
   digitalLeds_resetPixels(strands, numStrands);
 }
+/***LED灯带 结束**/
+uint8_t menuNum = 0;
+/**
+   按钮控制
+*/
+void btnControl() {
+  int btnStatUp = digitalRead(BTN_UP);
+  int btnStatDown = digitalRead(BTN_DOWN);
+  int btnStatEnter = digitalRead(BTN_ENTER);
+  int btnStatBack = digitalRead(BTN_BACK);
+  if ((btnStatUp != preBtnStatUp) && (btnStatUp == LOW)) {
+    ui.previousFrame();
+  }
+  if ((btnStatDown != preBtnStatDown) && (btnStatDown == LOW)) {
+    ui.nextFrame();
+  }
+  if ((btnStatEnter != preBtnStatEnter) && (btnStatEnter == LOW)) {
+    OLEDDisplayUiState* uiStat = ui.getUiState();
+    uint8_t currentFrame = uiStat->currentFrame;
+    if (menuNum == 0) {
+      if (currentFrame == 0) {
+        //main page do nothing
+      } else if (currentFrame == 1) {
+        //drawFlowLed
+        controlUi.goFlowLedChoose();
+      } else if (currentFrame == 2) {
+        //drawOled
+        controlUi.goDisplayChoose();
+      } else if (currentFrame == 3) {
+        //drawBle
+      } else if (currentFrame == 4) {
+        //drawWifi
+      }
+    }
+  }
+  if ((btnStatBack != preBtnStatBack) && (btnStatBack == LOW)) {
+    controlUi.goHome();
+  }
+  preBtnStatUp = btnStatUp;
+  preBtnStatDown = btnStatDown;
+  preBtnStatEnter = btnStatEnter;
+  preBtnStatBack = btnStatBack;
+}
 
 /**
    初始化
 */
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Initializing...");
-  digitalLeds_initDriver();
-
-  // Init unused outputs low to reduce noise
-  //  gpioSetup(14, OUTPUT, LOW);
-  //  gpioSetup(15, OUTPUT, LOW);
-  //  gpioSetup(26, OUTPUT, LOW);
-  //  gpioSetup(27, OUTPUT, LOW);
-  gpioSetup(strand.gpioNum, OUTPUT, LOW);
-  int rc = digitalLeds_addStrands(STRANDS, STRANDCNT);
-  if (rc) {
-    Serial.print("Init rc = ");
-    Serial.println(rc);
-  }
-  if (digitalLeds_initDriver()) {
-    Serial.println("Init FAILURE: halting");
-    while (true) {};
-  }
-  digitalLeds_resetPixels(STRANDS, STRANDCNT);
-
   // Initialising the UI will init the display too.
   // The ESP is capable of rendering 60fps in 80Mhz mode
   // but that won't give you much time for anything else
   // run it in 160Mhz mode or just set it to 30 fps
   ui.setTargetFPS(60);
-
-  // Customize the active and inactive symbol
-  ui.setActiveSymbol(activeSymbol);
-  ui.setInactiveSymbol(inactiveSymbol);
-
-  // You can change this to
-  // TOP, LEFT, BOTTOM, RIGHT
-  ui.setIndicatorPosition(BOTTOM);
-
-  // Defines where the first frame is located in the bar.
-  ui.setIndicatorDirection(LEFT_RIGHT);
-
-  // You can change the transition that is used
-  // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
-  ui.setFrameAnimation(SLIDE_LEFT);
-
-  // Add frames
-  ui.setFrames(frames, frameCount);
-
-  // Add overlays
-  ui.setOverlays(overlays, overlaysCount);
-
   // Initialising the UI will init the display too.
   ui.init();
+  //  ui.setLoadingDrawFunction(LoadingDrawDefault);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(64, 18, "Initializing");
+  display.drawProgressBar(4, 32, 120, 8, 10);
+  Serial.begin(115200);
+  Serial.println("Initializing...");
+
+  digitalLeds_initDriver();
+  gpioSetup(BTN_UP, INPUT_PULLUP, HIGH);
+  gpioSetup(BTN_DOWN, INPUT_PULLUP, HIGH);
+  gpioSetup(BTN_ENTER, INPUT_PULLUP, HIGH);
+  gpioSetup(BTN_BACK, INPUT_PULLUP, HIGH);
+  // Init unused outputs low to reduce noise
+  //  gpioSetup(14, OUTPUT, LOW);
+  //  gpioSetup(15, OUTPUT, LOW);
+  //  gpioSetup(26, OUTPUT, LOW);
+  gpioSetup(strand.gpioNum, OUTPUT, LOW);
+  int rc = digitalLeds_addStrands(STRANDS, STRANDCNT);
+  //  if (rc) {
+  //    Serial.print("Init rc = ");
+  //    Serial.println(rc);
+  //  }
+  //  if (digitalLeds_initDriver()) {
+  //    Serial.println("Init FAILURE: halting");
+  //    while (true) {};
+  //  }
+  digitalLeds_resetPixels(STRANDS, STRANDCNT);
+  display.drawProgressBar(4, 32, 120, 8, 30);
 
   display2.init();
   // This will make sure that multiple instances of a display driver
   // running on different ports will work together transparently
   display2.setI2cAutoInit(true);
   display2.flipScreenVertically();
-  display2.setFont(ArialMT_Plain_10);
-  display2.setTextAlignment(TEXT_ALIGN_LEFT);
-  display2.clear();
-  display2.drawString(0, 0, "Hello world: " + String(millis()));
-  display2.display();
+  display.drawProgressBar(4, 32, 120, 8, 60);
 
   unsigned long secsSinceStart = millis();
   // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
@@ -449,22 +338,35 @@ void setup() {
   unsigned long epoch = secsSinceStart - seventyYears * SECS_PER_HOUR;
   setTime(epoch);
 
+  display.drawProgressBar(4, 32, 120, 8, 100);
+  // TOP, LEFT, BOTTOM, RIGHT
+  ui.setIndicatorPosition(BOTTOM);
+  // Defines where the first frame is located in the bar.
+  ui.setIndicatorDirection(LEFT_RIGHT);
+  controlUi.goHome();
+  // Add overlays
+  ui.setOverlays(overlays, overlaysCount);
+
 }
 
 void loop() {
   int remainingTimeBudget = ui.update();
+  long startTime = millis();
 
-  if (remainingTimeBudget > 0) {
-    // You can do some work here
-    // Don't do stuff if you are below your
-    // time budget.
-    delay(remainingTimeBudget);
-  }
-
-
+  display2.setFont(ArialMT_Plain_10);
+  display2.setTextAlignment(TEXT_ALIGN_LEFT);
+  display2.clear();
+  display2.drawString(0, 0, "Hello world: " + String(millis()));
+  display2.display();
 
   // randomStrands(STRANDS, STRANDCNT, 200, 10000);
   rainbows(STRANDS, STRANDCNT, 1, 0);
   // simpleStepper(STRANDS, STRANDCNT, 0, 0);
-  delay(10);
+  btnControl();
+
+  long endTime = millis() - startTime;
+  //等待ui处理完成
+  if (remainingTimeBudget > endTime) {
+    delay(remainingTimeBudget - endTime);
+  }
 }
