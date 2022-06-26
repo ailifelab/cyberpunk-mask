@@ -72,13 +72,14 @@ void digitalClockFrame(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t 
   String timenow = String(hour()) + ":" + twoDigits(minute()) + ":" + twoDigits(second());
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_24);
-  display->drawString(clockCenterX + x , clockCenterY + y, timenow );
+  display->drawString(clockCenterX + x , clockCenterY - 10 + y, timenow );
 }
+/*******主菜单*******/
 /**
    菜单首页
 */
 void drawMainPage(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  analogClockFrame(display, state, x, y);
+  digitalClockFrame(display, state, x, y);
 }
 /**
    流水灯模式选择
@@ -86,32 +87,15 @@ void drawMainPage(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
 void drawFlowLed(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 10 + y, "Test 10");
-
-  display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 20 + y, "Test 16");
-
-  display->setFont(ArialMT_Plain_24);
-  display->drawString(0 + x, 34 + y, "Test 24");
+  display->drawString(5 + x, 20 + y, "Choose LED band mode");
 }
 /**
    副屏显示选择
 */
 void drawOled(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Text alignment demo
-  display->setFont(ArialMT_Plain_10);
-
-  // The coordinates define the left starting point of the text
+  display->setFont(ArialMT_Plain_16);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 11 + y, "Left aligned (0,10)");
-
-  // The coordinates define the center of the text
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 22 + y, "Center aligned (64,22)");
-
-  // The coordinates define the right end of the text
-  display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(128 + x, 33 + y, "Right aligned (128,33)");
+  display->drawString(10 + x, 20 + y, "Choose Picture");
 }
 /**
    蓝牙菜单
@@ -119,8 +103,8 @@ void drawOled(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_
 void drawBle(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 20 + y, "Bluetooth");
-  display->drawXbm(x + 80, y + 10, BLE_Logo_width, BLE_Logo_height, BLE_Logo_bits);
+  display->drawString(10 + x, 20 + y, "Bluetooth");
+  display->drawXbm(x + 65, y + 5, cube_01_width, cube_01_height, cube_01_bits);
 }
 /**
    wifi配置
@@ -130,10 +114,23 @@ void drawWifi(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_
 }
 FrameCallback homeFrames[] = { drawMainPage, drawFlowLed, drawOled, drawBle, drawWifi };
 int homeFrameCount = 5;
+/***********图片菜单************/
+void drawPic01(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->drawXbm(x + 30, y + 5, cube_01_width, cube_01_height, cube_01_bits);
+}
+void drawPic02(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->drawXbm(x + 20, y + 5, cube_long_width, cube_long_height, cube_long_bits);
+}
+FrameCallback picFrames[] = { drawPic01, drawPic02 };
+int picFrameCount = 2;
 /**
    切换到主菜单 0
 */
 void ControlUi::goHome() {
+  // TOP, LEFT, BOTTOM, RIGHT
+  ui->setIndicatorPosition(BOTTOM);
+  // Defines where the first frame is located in the bar.
+  ui->setIndicatorDirection(LEFT_RIGHT);
   // Customize the active and inactive symbol
   ui->setActiveSymbol(activeSymbol);
   ui->setInactiveSymbol(inactiveSymbol);
@@ -146,7 +143,10 @@ void ControlUi::goHome() {
    切换到副屏选择菜单 1
 */
 void ControlUi::goDisplayChoose() {
-
+  ui->setIndicatorPosition(LEFT);
+  ui->setIndicatorDirection(LEFT_RIGHT);
+  ui->setFrameAnimation(SLIDE_UP);
+  ui->setFrames(picFrames, picFrameCount);
 }
 /**
    切换到跑马灯选择菜单 2
