@@ -71,4 +71,5 @@
 <hr>
 
 ## 效果
-<iframe width="560" height="315" src="https://www.youtube.com/embed/BOateCBAd_g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Play on youtube](https://img.youtube.com/vi/BOateCBAd_g/0.jpg)](https://www.youtube.com/embed/BOateCBAd_g)
+
