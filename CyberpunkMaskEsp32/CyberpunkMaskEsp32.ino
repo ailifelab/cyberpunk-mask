@@ -73,12 +73,15 @@ void btnControl() {
   int btnStatEnter = digitalRead(BTN_ENTER);
   int btnStatBack = digitalRead(BTN_BACK);
   if ((btnStatUp != preBtnStatUp) && (btnStatUp == LOW)) {
+    Serial.println("button up!");
     ui.previousFrame();
   }
   if ((btnStatDown != preBtnStatDown) && (btnStatDown == LOW)) {
+    Serial.println("button down!");
     ui.nextFrame();
   }
   if ((btnStatEnter != preBtnStatEnter) && (btnStatEnter == LOW)) {
+    Serial.println("button enter!");
     OLEDDisplayUiState* uiStat = ui.getUiState();
     uint8_t currentFrame = uiStat->currentFrame;
     if (menuNum == 0) {
@@ -103,6 +106,7 @@ void btnControl() {
     }
   }
   if ((btnStatBack != preBtnStatBack) && (btnStatBack == LOW)) {
+    Serial.println("button back!");
     controlUi.goHome();
     if (menuNum == 1) {
       ui.switchToFrame(1);

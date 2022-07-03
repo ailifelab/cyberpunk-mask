@@ -67,14 +67,8 @@
 - 导线若干
 
 ### 成品      
-//Todo upload pictures      
-![样式](./draw/sample1.jpg)
+<img src="./draw/sample1.jpg" width="200px">
 <hr>
 
 ## 效果
-//Todo upload video
-<iframe width="640" height="480"
-src="https://www.youtube.com/embed/MUQfKFzIOeU" 
-frameborder="0" 
-allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/BOateCBAd_g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
