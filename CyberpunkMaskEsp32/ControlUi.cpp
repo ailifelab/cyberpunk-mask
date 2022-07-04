@@ -2,6 +2,9 @@
 #include <TimeLib.h>
 #include "images.h"
 #include "image_action_cube_long.h"
+#include "image_action_football.h"
+#include "image_action_cube.h"
+#include "image_action_forward.h"
 //定义屏幕尺寸
 int screenW = 128;
 int screenH = 64;
@@ -124,10 +127,19 @@ void drawPic01(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16
   display->drawXbm(x + 20, y + 5, cube_long_width, cube_long_height, cube_long_bits);
 }
 void drawPic02(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->drawXbm(x + 30, y + 5, cube_01_width, cube_01_height, cube_01_bits);
+  display->drawXbm(x + 30, y + 5, image_football_width, image_football_height, image_football_bits);
 }
-FrameCallback picFrames[] = { drawPic01, drawPic02 };
-int picFrameCount = 2;
+
+void drawPic03(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->drawXbm(x + 30, y + 5, image_cube_width, image_cube_height, image_cube_bits);
+
+}
+void drawPic04(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->drawXbm(x + 30, y + 5, image_forward_width, image_forward_height, image_forward_bits);
+
+}
+FrameCallback picFrames[] = { drawPic01, drawPic02, drawPic03, drawPic04 };
+int picFrameCount = 4;
 
 /***跑马灯设置*****/
 void flowLed01(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -208,7 +220,7 @@ void ControlUi::renderSecondScreen() {
     lastFlipTime = nowTime;
     this->display->clear();
     if (0 == secondImage) {
-      int x = 65;
+      int x = 20;
       int y = 5;
       switch (fpsNum) {
         case 0:
@@ -276,23 +288,135 @@ void ControlUi::renderSecondScreen() {
           break;
         case 21:
           display->drawXbm(x, y, cube_long_width, cube_long_height, cube_long_bits_21);
+          fpsNum = -1;
           break;
         default:
-          fpsNum = -1;
+          fpsNum = 0;
       }
       fpsNum++;
     } else if (1 == secondImage) {
-      this->display->clear();
+      int x = 30;
+      int y = 5;
+      switch (fpsNum) {
+        case 0:
+          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits);
+          break;
+        case 1:
+          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_1);
+          break;
+        case 2:
+          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_2);
+          break;
+        case 3:
+          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_3);
+          fpsNum = -1;
+          break;
+        default:
+          fpsNum = 0;
+      }
+      fpsNum++;
     } else if (2 == secondImage) {
-      this->display->clear();
+      int x = 10;
+      int y = 2;
+      switch (fpsNum) {
+        case 0:
+          display->drawXbm(x , y , image_cube_width, image_cube_height, image_cube_bits);
+          break;
+        case 1:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_1);
+          break;
+        case 2:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_2);
+          break;
+        case 3:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_3);
+          break;
+        case 4:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_4);
+          break;
+        case 5:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_5);
+          break;
+        case 6:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_6);
+          break;
+        case 7:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_7);
+          break;
+        case 8:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_8);
+          break;
+        case 9:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_9);
+          break;
+        case 10:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_10);
+//          break;
+//        case 11:
+//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_11);
+//          break;
+//        case 12:
+//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_12);
+//          break;
+//        case 13:
+//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_13);
+          fpsNum = -1;
+          break;
+        default:
+          fpsNum = 0;
+      }
+      fpsNum++;
     } else if (3 == secondImage) {
-      this->display->clear();
+      int x = 10;
+      int y = 2;
+      switch (fpsNum) {
+        case 0:
+          display->drawXbm(x , y , image_forward_width, image_forward_height, image_forward_bits);
+          break;
+        case 1:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_1);
+          break;
+        case 2:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_2);
+          break;
+        case 3:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_3);
+          break;
+        case 4:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_4);
+          break;
+        case 5:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_5);
+          break;
+        case 6:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_6);
+          break;
+        case 7:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_7);
+          break;
+        case 8:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_8);
+          break;
+        case 9:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_9);
+          break;
+        case 10:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_10);
+          break;
+        case 11:
+          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_11);
+          fpsNum = -1;
+          break;
+        default:
+          fpsNum = 0;
+      }
+      fpsNum++;
+
     } else {
       this->display->setFont(ArialMT_Plain_16);
       this->display->setTextAlignment(TEXT_ALIGN_LEFT);
       this->display->drawString(10, 10, " " + String(nowTime));
     }
-
     this->display->display();
   }
 }
