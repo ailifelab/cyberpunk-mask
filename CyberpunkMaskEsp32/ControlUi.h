@@ -13,8 +13,9 @@
 class ControlUi {
   private:
     OLEDDisplayUi *ui;
+    OLEDDisplay *display;
   public:
-    ControlUi(OLEDDisplayUi *ui);
+    ControlUi(OLEDDisplayUi *ui, OLEDDisplay *display);
     /**
       切换到主菜单 0
     */
@@ -27,5 +28,22 @@ class ControlUi {
        切换到跑马灯选择菜单 2
     */
     void goFlowLedChoose();
+    /**
+       切换到蓝牙选择菜单 3
+    */
+    void goBleChoose();
+    /**
+       切换到Wifi选择菜单 4
+    */
+    void goWifiChoose();
+    /**
+       渲染副屏
+    */
+    void renderSecondScreen();
+    /**
+       设置副屏内容
+    */
+    void setSecondImage(int num);
+
 };
 #endif

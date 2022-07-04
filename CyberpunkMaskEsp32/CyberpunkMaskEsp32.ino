@@ -35,7 +35,7 @@ SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
 SSD1306Wire  display2(0x3c, DISP_SDA_2, DISP_SCL_2, GEOMETRY_128_64, I2C_TWO);
 //display 用于菜单选择控制
 OLEDDisplayUi ui ( &display );
-ControlUi controlUi ( &ui );
+ControlUi controlUi ( &ui, &display2 );
 
 //for LED band
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
@@ -73,11 +73,9 @@ void btnControl() {
   int btnStatEnter = digitalRead(BTN_ENTER);
   int btnStatBack = digitalRead(BTN_BACK);
   if ((btnStatUp != preBtnStatUp) && (btnStatUp == LOW)) {
-    Serial.println("button up!");
     ui.previousFrame();
   }
   if ((btnStatDown != preBtnStatDown) && (btnStatDown == LOW)) {
-    Serial.println("button down!");
     ui.nextFrame();
   }
   if ((btnStatEnter != preBtnStatEnter) && (btnStatEnter == LOW)) {
@@ -98,11 +96,16 @@ void btnControl() {
         menuNum = 2;
       } else if (currentFrame == 3) {
         //drawBle
-        menuNum = 3;
+        //        menuNum = 3;
       } else if (currentFrame == 4) {
         //drawWifi
-        menuNum = 4;
+        //        menuNum = 4;
       }
+    } else if (menuNum == 1) {
+
+    } else if (menuNum == 2) {
+      //choose image show
+      controlUi.setSecondImage(currentFrame);
     }
   }
   if ((btnStatBack != preBtnStatBack) && (btnStatBack == LOW)) {
@@ -164,7 +167,7 @@ void setup() {
   // This will make sure that multiple instances of a display driver
   // running on different ports will work together transparently
   display2.setI2cAutoInit(true);
-  display2.flipScreenVertically();
+  //  display2.flipScreenVertically();
   //  display.drawProgressBar(4, 32, 120, 8, 60);
 
   unsigned long secsSinceStart = millis();
@@ -185,11 +188,7 @@ void loop() {
   int remainingTimeBudget = ui.update();
   long startTime = millis();
 
-  display2.setFont(ArialMT_Plain_16);
-  display2.setTextAlignment(TEXT_ALIGN_LEFT);
-  display2.clear();
-  display2.drawString(10, 10, " " + String(millis()));
-  display2.display();
+  controlUi.renderSecondScreen();
 
   // randomStrands(STRANDS, STRANDCNT, 200, 10000);
   //  rainbows(STRANDS, STRANDCNT, 1, 10);
