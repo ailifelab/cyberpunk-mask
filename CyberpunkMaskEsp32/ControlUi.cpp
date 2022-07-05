@@ -351,15 +351,30 @@ void ControlUi::renderSecondScreen() {
           break;
         case 10:
           display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_10);
-//          break;
-//        case 11:
-//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_11);
-//          break;
-//        case 12:
-//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_12);
-//          break;
-//        case 13:
-//          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_13);
+          break;
+        case 11:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_11);
+          break;
+        case 12:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_12);
+          break;
+        case 13:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_13);
+          break;
+        case 14:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_14);
+          break;
+        case 15:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_15);
+          break;
+        case 16:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_16);
+          break;
+        case 17:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_17);
+          break;
+        case 18:
+          display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_18);
           fpsNum = -1;
           break;
         default:
