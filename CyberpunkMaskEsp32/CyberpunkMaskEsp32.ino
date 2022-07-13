@@ -29,6 +29,7 @@ int preBtnStatUp = HIGH;
 int preBtnStatDown = HIGH;
 int preBtnStatEnter = HIGH;
 int preBtnStatBack = HIGH;
+#define LIGHT_NUM_METER 60
 
 // Initialize the OLED display using Wire library
 SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
@@ -41,7 +42,7 @@ ControlUi controlUi ( &ui, &display2 );
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
-strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 30, .numPixels = 60};
+strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 24, .numPixels = LIGHT_NUM_METER};
 strand_t * STRANDS [] = { &strand };
 int STRANDCNT = COUNT_OF(STRANDS);
 #pragma GCC diagnostic pop

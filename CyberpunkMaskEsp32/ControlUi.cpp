@@ -216,12 +216,14 @@ int fpsNum = 0;
 */
 void ControlUi::renderSecondScreen() {
   long nowTime = millis();
-  if (nowTime - lastFlipTime >= 1000) {
+  if (nowTime - lastFlipTime >= 300) {
     lastFlipTime = nowTime;
     this->display->clear();
+    int x = 0;
+    int y = 0;
     if (0 == secondImage) {
-      int x = 20;
-      int y = 5;
+      x = 20;
+      y = 5;
       switch (fpsNum) {
         case 0:
           display->drawXbm( x,  y, cube_long_width, cube_long_height, cube_long_bits);
@@ -293,34 +295,80 @@ void ControlUi::renderSecondScreen() {
         default:
           fpsNum = 0;
       }
-      fpsNum++;
     } else if (1 == secondImage) {
-      int x = 30;
-      int y = 5;
+      x = 30;
+      y = 5;
       switch (fpsNum) {
         case 0:
           display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits);
           break;
         case 1:
-          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_1);
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_1);
           break;
         case 2:
-          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_2);
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_2);
           break;
         case 3:
-          display->drawXbm( x,  y, image_football_width, image_football_height, image_football_bits_3);
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_3);
+          break;
+        case 4:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_4);
+          break;
+        case 5:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_5);
+          break;
+        case 6:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_6);
+          break;
+        case 7:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_7);
+          break;
+        case 8:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_8);
+          break;
+        case 9:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_9);
+          break;
+        case 10:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_10);
+          break;
+        case 11:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_11);
+          break;
+        case 12:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_12);
+          break;
+        case 13:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_13);
+          break;
+        case 14:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_14);
+          break;
+        case 15:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_15);
+          break;
+        case 16:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_16);
+          break;
+        case 17:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_17);
+          break;
+        case 18:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_18);
+          break;
+        case 19:
+          display->drawXbm(x, y, image_football_width, image_football_height, image_football_bits_19);
           fpsNum = -1;
           break;
         default:
           fpsNum = 0;
       }
-      fpsNum++;
     } else if (2 == secondImage) {
-      int x = 10;
-      int y = 2;
+      x = 30;
+      y = 2;
       switch (fpsNum) {
         case 0:
-          display->drawXbm(x , y , image_cube_width, image_cube_height, image_cube_bits);
+          display->drawXbm( x,  y, image_cube_width, image_cube_height, image_cube_bits);
           break;
         case 1:
           display->drawXbm(x, y, image_cube_width, image_cube_height, image_cube_bits_1);
@@ -380,13 +428,12 @@ void ControlUi::renderSecondScreen() {
         default:
           fpsNum = 0;
       }
-      fpsNum++;
     } else if (3 == secondImage) {
-      int x = 10;
-      int y = 2;
+      x = 30;
+      y = 2;
       switch (fpsNum) {
         case 0:
-          display->drawXbm(x , y , image_forward_width, image_forward_height, image_forward_bits);
+          display->drawXbm( x,  y, image_forward_width, image_forward_height, image_forward_bits);
           break;
         case 1:
           display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_1);
@@ -411,28 +458,18 @@ void ControlUi::renderSecondScreen() {
           break;
         case 8:
           display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_8);
-          break;
-        case 9:
-          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_9);
-          break;
-        case 10:
-          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_10);
-          break;
-        case 11:
-          display->drawXbm(x, y, image_forward_width, image_forward_height, image_forward_bits_11);
           fpsNum = -1;
           break;
         default:
           fpsNum = 0;
       }
-      fpsNum++;
-
     } else {
       this->display->setFont(ArialMT_Plain_16);
       this->display->setTextAlignment(TEXT_ALIGN_LEFT);
       this->display->drawString(10, 10, " " + String(nowTime));
     }
     this->display->display();
+    fpsNum++;
   }
 }
 
