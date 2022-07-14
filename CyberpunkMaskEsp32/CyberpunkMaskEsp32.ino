@@ -12,8 +12,7 @@
 #include "OLEDDisplayUi.h"
 #include "esp32_digital_led_lib.h" //流水灯控制
 #include "ControlUi.h"
-#include "fireworks_effects.h"
-
+#include "led_brand_effects.h"
 //定义输出
 #define LED_BAND_PIN 27
 #define DISP_SDA_1 0
@@ -29,7 +28,7 @@ int preBtnStatUp = HIGH;
 int preBtnStatDown = HIGH;
 int preBtnStatEnter = HIGH;
 int preBtnStatBack = HIGH;
-#define LIGHT_NUM_METER 60
+#define LIGHT_NUM_METER 22
 
 // Initialize the OLED display using Wire library
 SSD1306Wire  display(0x3c, DISP_SDA_1 , DISP_SCL_1, GEOMETRY_128_64, I2C_ONE);
@@ -42,12 +41,12 @@ ControlUi controlUi ( &ui, &display2 );
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
-strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 24, .numPixels = LIGHT_NUM_METER};
+strand_t strand = {.rmtChannel = 0, .gpioNum = LED_BAND_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 30, .numPixels = LIGHT_NUM_METER};
 strand_t * STRANDS [] = { &strand };
 int STRANDCNT = COUNT_OF(STRANDS);
 #pragma GCC diagnostic pop
-FireworksEffects * fweffects;
 
+LedBrandEffects * ledbrand;
 
 /****绘制菜单****/
 /**
@@ -103,7 +102,8 @@ void btnControl() {
         //        menuNum = 4;
       }
     } else if (menuNum == 1) {
-
+      //choose led
+      ledbrand->setEffNum(currentFrame);
     } else if (menuNum == 2) {
       //choose image show
       controlUi.setSecondImage(currentFrame);
@@ -161,7 +161,7 @@ void setup() {
   //    while (true) {};
   //  }
   digitalLeds_resetPixels(STRANDS, STRANDCNT);
-  fweffects = new FireworksEffects(&strand);
+  ledbrand = new LedBrandEffects(&strand);
   //  display.drawProgressBar(4, 32, 120, 8, 30);
 
   display2.init();
@@ -194,7 +194,7 @@ void loop() {
   // randomStrands(STRANDS, STRANDCNT, 200, 10000);
   //  rainbows(STRANDS, STRANDCNT, 1, 10);
   // simpleStepper(STRANDS, STRANDCNT, 0, 0);
-  fweffects->Render();
+  ledbrand->renderLed();
   btnControl();
 
   long endTime = millis() - startTime;

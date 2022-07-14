@@ -112,8 +112,8 @@ void FireworksEffects::Render()
   // to the size of the display so that the display size can change and
   // the "effect density" will stay the same
 
-  const int min_width = 10;
-  const int max_width = 50;
+  const int min_width = 5;
+  const int max_width = 18;//default 50
   const int max_speed_multiplier = 3.0;
 
   for (int iPass = 0; iPass < graphics->DotCount / max_width; iPass++)
